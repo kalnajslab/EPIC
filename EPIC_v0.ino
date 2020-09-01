@@ -49,6 +49,7 @@ uint16_t TSEN_P = 0x5678;
 bool HeaterStatus = false;
 byte UBLOXsettingsArray[] = {0x06, 0xE8, 0x03, 0x80, 0x25, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00};
 
+String FileName = "EPICLog.txt";
 
 LoopbackStream LoRaBuff;
 TinyGPSPlus gps;
@@ -105,6 +106,7 @@ void loop() {
     V_3V3 = EPIC.GetAnalogVoltage(TEENSY);
     TempPCB.ManageState(TPCB_val);
     recordInd = SaveRecord(recordInd);
+    WriteToSD(FileName);
    
 
     if (recordInd > RecordsToSend)
@@ -351,4 +353,24 @@ int setHeater()
   }
 return HeaterStatus;
   
+}
+
+bool WriteToSD(String FName)
+{
+File EFUFile;
+
+if (!SD.begin()) {
+    DEBUG_SERIAL.println("initialization failed!");
+    return false;
+  }
+char filename[100];
+FName.toCharArray(filename, 100);
+EFUFile = SD.open(filename, FILE_WRITE);
+EFUFile.printf("%ld,%8.5f,%8.5f,%d,%d,%d,%d,%4.3f,%4.3f,%4.3f,%5.2f,%5.2f\n ", now(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), TSEN_T, TSEN_P, TSEN_TP, V_Battery, V_DCDC, V_3V3, TBatt_val,TPCB_val );
+EFUFile.close();
+//DEBUG_SERIAL.printf("Wrote: %ld,%8.5f,%8.5f,%d,%d,%d,%d,%4.3f,%4.3f,%4.3f,%5.2f,%5.2f\n ", now(), gps.location.lat(), gps.location.lng(), gps.altitude.meters(), TSEN_T, TSEN_P, TSEN_TP, V_Battery, V_DCDC, V_3V3, TBatt_val,TPCB_val );
+
+return true;
+
+
 }
